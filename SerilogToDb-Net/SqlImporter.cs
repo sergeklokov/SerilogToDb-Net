@@ -47,6 +47,7 @@ CREATE TABLE dbo.[{tableName}]
     MachineName NVARCHAR(200) NULL,
 
     MemoryUsage BIGINT NULL,
+    MemoryGb INT NULL,
 
     ProcessId INT NULL,
     ThreadId INT NULL,
@@ -104,6 +105,7 @@ END
             dt.Columns.Add("Detail");
             dt.Columns.Add("MachineName");
             dt.Columns.Add("MemoryUsage", typeof(long));
+            dt.Columns.Add("MemoryGb", typeof(int));
             dt.Columns.Add("ProcessId", typeof(int));
             dt.Columns.Add("ThreadId", typeof(int));
             dt.Columns.Add("Version");
@@ -126,6 +128,7 @@ END
                     e.Detail,
                     e.MachineName,
                     e.MemoryUsage,
+                    e.MemoryGb,
                     e.ProcessId,
                     e.ThreadId,
                     e.Version,
@@ -155,6 +158,7 @@ END
             bulk.ColumnMappings.Add("Detail", "Detail");
             bulk.ColumnMappings.Add("MachineName", "MachineName");
             bulk.ColumnMappings.Add("MemoryUsage", "MemoryUsage");
+            bulk.ColumnMappings.Add("MemoryGb", "MemoryGb");
             bulk.ColumnMappings.Add("ProcessId", "ProcessId");
             bulk.ColumnMappings.Add("ThreadId", "ThreadId");
             bulk.ColumnMappings.Add("Version", "Version");

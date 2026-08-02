@@ -110,6 +110,12 @@ namespace SerilogToDb_Net
                         evt.SqlErrorNumber = sqlErr.GetInt32();
                 }
 
+                // Calculate memory in GB and round to nearest whole GB
+                if (evt.MemoryUsage.HasValue)
+                {
+                    evt.MemoryGb = (int)Math.Round((double)evt.MemoryUsage.Value / 1073741824.0, MidpointRounding.AwayFromZero);
+                }
+
                 result.Add(evt);
             }
             catch (Exception ex)

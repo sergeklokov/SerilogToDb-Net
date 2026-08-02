@@ -19,6 +19,7 @@ namespace SerilogToDb_Net
         public string? MachineName { get; set; }
 
         public long? MemoryUsage { get; set; }
+        public int? MemoryGb { get; set; }
 
         public int? ProcessId { get; set; }
         public int? ThreadId { get; set; }
