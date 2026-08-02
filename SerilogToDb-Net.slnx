@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="Example-of-Sirilog.txt.jpg" />
+    <File Path="images.md" />
+    <File Path="Imported-Serilog-tables.jpg" />
+    <File Path="Readme Old.md" />
+    <File Path="Readme.md" />
+    <File Path="Visual-Studio-Debug-launch-profile.jpg" />
+    <File Path="Visual-Studio-Debug.jpg" />
+  </Folder>
+  <Project Path="SerilogToDb-Net/SerilogToDb-Net.csproj" />
+</Solution>

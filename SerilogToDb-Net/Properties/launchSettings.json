@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "SerilogToDb-Net": {
+      "commandName": "Project",
+      "commandLineArgs": "Small.txt"
+    }
+  }
+}
