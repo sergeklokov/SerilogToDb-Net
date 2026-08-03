@@ -1,112 +1,88 @@
-CREATE TABLE dbo.Serilog_Small
+IF NOT EXISTS
 (
-    LogId BIGINT IDENTITY(1,1) NOT NULL,
+    SELECT *
+    FROM sys.tables
+    WHERE name = '{tableName}'
+)
+BEGIN
 
-    -- Import metadata
-    ImportDateUtc DATETIME2(3) NOT NULL
-        CONSTRAINT DF_Serilog_Small_ImportDateUtc
-        DEFAULT SYSUTCDATETIME(),
-    LogSequenceNumber BIGINT NULL,
+CREATE TABLE dbo.[{tableName}]
+(
+    LogId BIGINT IDENTITY(1,1) PRIMARY KEY,
 
-    -- Serilog fields
-    LogTimeUtc DATETIME2(7) NOT NULL,
+    -- Core fields
+    LogTimeUtc DATETIME2 NULL,
     LogLevel NVARCHAR(20) NULL,
-    MessageTemplate NVARCHAR(MAX) NULL,
-    RenderedMessage NVARCHAR(MAX) NULL,
-    ExceptionText NVARCHAR(MAX) NULL,
 
-    -- Context
+    MessageTemplate NVARCHAR(MAX) NULL,
+    ExceptionText NVARCHAR(MAX) NULL,
+    ExceptionType NVARCHAR(500) NULL,
+
+    -- Application context
     ApplicationName NVARCHAR(200) NULL,
     SourceContext NVARCHAR(1000) NULL,
+
     Context NVARCHAR(500) NULL,
     Detail NVARCHAR(MAX) NULL,
 
     -- Environment
     MachineName NVARCHAR(200) NULL,
+
+    MemoryUsage BIGINT NULL,
+    MemoryGb INT NULL,
+
     ProcessId INT NULL,
     ThreadId INT NULL,
-    Version NVARCHAR(100) NULL,
-    MemoryUsage BIGINT NULL,
 
-    -- User/Session
-    EnvironmentUserName NVARCHAR(500) NULL,
+    Version NVARCHAR(100) NULL,
+
     UserName NVARCHAR(500) NULL,
+    EnvironmentUserName NVARCHAR(500) NULL,
+
     ClientGuid UNIQUEIDENTIFIER NULL,
 
-    -- SQL Exception Details
+    -- General SQL fields
     SqlErrorNumber INT NULL,
-    SqlErrorState INT NULL,
-    SqlErrorClass INT NULL,
-    StoredProcedure NVARCHAR(500) NULL,
-    ClientConnectionId UNIQUEIDENTIFIER NULL,
 
-    -- Computed column
-    HasException AS
-    (
-        CASE
-            WHEN ExceptionText IS NULL THEN CONVERT(bit,0)
-            ELSE CONVERT(bit,1)
-        END
-    ) PERSISTED,
+    ShortSql NVARCHAR(MAX) NULL,
+    SqlText NVARCHAR(MAX) NULL,
+    SqlResult INT NULL,
+    SqlParameters NVARCHAR(MAX) NULL,
+    ConnectionString NVARCHAR(MAX) NULL,
 
-    -- Original log event
-    RawJson NVARCHAR(MAX) NOT NULL,
+    -- Generic Serilog rendering values (@r)
+    Renderings NVARCHAR(MAX) NULL,
 
-    CONSTRAINT PK_Serilog_Small
-        PRIMARY KEY NONCLUSTERED (LogId)
+    -- Interface / integration logs
+    EndpointUrl NVARCHAR(2000) NULL,
+    JobResult BIT NULL,
+
+    -- Original log payload
+    RawJson NVARCHAR(MAX) NOT NULL
 );
-GO
 
---------------------------------------------------------
--- Main clustered index for time-based searching
---------------------------------------------------------
-CREATE CLUSTERED INDEX CIX_Serilog_Small_LogTimeUtc
-ON dbo.Serilog_Small(LogTimeUtc, LogId);
-GO
+CREATE INDEX IX_{tableName}_Time
+    ON dbo.[{tableName}] (LogTimeUtc DESC);
 
---------------------------------------------------------
--- Errors
---------------------------------------------------------
-CREATE INDEX IX_Serilog_Small_Level_Time
-ON dbo.Serilog_Small(LogLevel, LogTimeUtc DESC);
-GO
+CREATE INDEX IX_{tableName}_LevelTime
+    ON dbo.[{tableName}] (LogLevel, LogTimeUtc DESC);
 
-CREATE INDEX IX_Serilog_Small_HasException_Time
-ON dbo.Serilog_Small(HasException, LogTimeUtc DESC);
-GO
+CREATE INDEX IX_{tableName}_SourceContext
+    ON dbo.[{tableName}] (SourceContext, LogTimeUtc DESC);
 
---------------------------------------------------------
--- Source / Context
---------------------------------------------------------
-CREATE INDEX IX_Serilog_Small_SourceContext_Time
-ON dbo.Serilog_Small(SourceContext, LogTimeUtc DESC);
-GO
+CREATE INDEX IX_{tableName}_Memory
+    ON dbo.[{tableName}] (MemoryUsage DESC);
 
-CREATE INDEX IX_Serilog_Small_Context_Time
-ON dbo.Serilog_Small(Context, LogTimeUtc DESC);
-GO
+CREATE INDEX IX_{tableName}_User
+    ON dbo.[{tableName}] (UserName, LogTimeUtc DESC);
 
---------------------------------------------------------
--- User analysis
---------------------------------------------------------
-CREATE INDEX IX_Serilog_Small_User_Time
-ON dbo.Serilog_Small(UserName, LogTimeUtc DESC);
-GO
+CREATE INDEX IX_{tableName}_SqlResult
+    ON dbo.[{tableName}] (SqlResult, LogTimeUtc DESC);
 
-CREATE INDEX IX_Serilog_Small_ClientGuid_Time
-ON dbo.Serilog_Small(ClientGuid, LogTimeUtc DESC);
-GO
+CREATE INDEX IX_{tableName}_Application
+    ON dbo.[{tableName}] (ApplicationName, LogTimeUtc DESC);
 
---------------------------------------------------------
--- Process analysis
---------------------------------------------------------
-CREATE INDEX IX_Serilog_Small_ProcessId_Time
-ON dbo.Serilog_Small(ProcessId, LogTimeUtc DESC);
-GO
+CREATE INDEX IX_{tableName}_Process
+    ON dbo.[{tableName}] (ProcessId, LogTimeUtc DESC);
 
---------------------------------------------------------
--- Memory usage analysis
---------------------------------------------------------
-CREATE INDEX IX_Serilog_Small_MemoryUsage_Time
-ON dbo.Serilog_Small(MemoryUsage DESC, LogTimeUtc DESC);
-GO
+END

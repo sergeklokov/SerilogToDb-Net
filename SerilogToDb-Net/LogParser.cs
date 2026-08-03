@@ -51,6 +51,10 @@ namespace SerilogToDb_Net
                         ? ex.ToString()
                         : null,
 
+                    ExceptionType = root.TryGetProperty("ExceptionType", out var et)
+                        ? et.ToString()
+                        : null,
+
                     ApplicationName = root.TryGetProperty("ApplicationName", out var app)
                         ? app.ToString()
                         : null,
@@ -93,7 +97,31 @@ namespace SerilogToDb_Net
 
                     EnvironmentUserName = root.TryGetProperty("EnvironmentUserName", out var envUser)
                         ? envUser.ToString()
-                        : null
+                        : null,
+
+                    ShortSql = root.TryGetProperty("ShortSql", out var shortSql)
+                        ? shortSql.ToString()
+                        : null,
+
+                    SqlText = root.TryGetProperty("Sql", out var sql)
+                        ? sql.ToString()
+                        : null,
+
+                    SqlParameters = root.TryGetProperty("SqlParameters", out var sqlParams)
+                        ? sqlParams.ToString()
+                        : null,
+
+                    ConnectionString = root.TryGetProperty("ConnectionString", out var conn)
+                        ? conn.ToString()
+                        : null,
+
+                    Renderings = root.TryGetProperty("@r", out var r)
+                        ? r.ToString()
+                        : null,
+
+                    EndpointUrl = root.TryGetProperty("EndpointUrl", out var endpoint)
+                        ? endpoint.ToString()
+                        : null,
                 };
 
                 if (root.TryGetProperty("ClientGuid", out var cg))
@@ -110,8 +138,23 @@ namespace SerilogToDb_Net
                         evt.SqlErrorNumber = sqlErr.GetInt32();
                 }
 
-                // Calculate memory in GB and round to nearest whole GB
-                if (evt.MemoryUsage.HasValue)
+                if (root.TryGetProperty("SqlResult", out var sqlResult))
+                {
+                    if (sqlResult.ValueKind == JsonValueKind.Number)
+                        evt.SqlResult = sqlResult.GetInt32();
+                }
+
+                if (root.TryGetProperty("JobResult", out var jobResult))
+                {
+                    if (jobResult.ValueKind == JsonValueKind.True ||
+                        jobResult.ValueKind == JsonValueKind.False)
+                    {
+                        evt.JobResult = jobResult.GetBoolean();
+                    }
+                }
+
+                    // Calculate memory in GB and round to nearest whole GB
+                    if (evt.MemoryUsage.HasValue)
                 {
                     evt.MemoryGb = (int)Math.Round((double)evt.MemoryUsage.Value / 1073741824.0, MidpointRounding.AwayFromZero);
                 }

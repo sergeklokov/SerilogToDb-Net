@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace SerilogToDb_Net
 {
     using Microsoft.Data.SqlClient;
     using System.Data;
+    using System.Text.RegularExpressions;
 
     public class SqlImporter
     {
@@ -18,32 +20,33 @@ namespace SerilogToDb_Net
 
         public async Task CreateTableIfMissingAsync(string tableName)
         {
+            tableName = Regex.Replace(
+                tableName,
+                @"[^A-Za-z0-9_]",
+                "_");
+
             var sql =
-    $"""
+        $$"""
 IF NOT EXISTS
 (
     SELECT *
     FROM sys.tables
-    WHERE name = '{tableName}'
+    WHERE name = '{{tableName}}'
 )
 BEGIN
 
-CREATE TABLE dbo.[{tableName}]
+CREATE TABLE dbo.[{{tableName}}]
 (
     LogId BIGINT IDENTITY(1,1) PRIMARY KEY,
-
     LogTimeUtc DATETIME2 NULL,
     LogLevel NVARCHAR(20) NULL,
-
     MessageTemplate NVARCHAR(MAX) NULL,
     ExceptionText NVARCHAR(MAX) NULL,
-
+    ExceptionType NVARCHAR(500) NULL,
     ApplicationName NVARCHAR(200) NULL,
     SourceContext NVARCHAR(1000) NULL,
-
     Context NVARCHAR(500) NULL,
     Detail NVARCHAR(MAX) NULL,
-
     MachineName NVARCHAR(200) NULL,
 
     MemoryUsage BIGINT NULL,
@@ -61,34 +64,50 @@ CREATE TABLE dbo.[{tableName}]
 
     SqlErrorNumber INT NULL,
 
+    ShortSql NVARCHAR(MAX) NULL,
+    SqlText NVARCHAR(MAX) NULL,
+    SqlResult INT NULL,
+    SqlParameters NVARCHAR(MAX) NULL,
+    ConnectionString NVARCHAR(MAX) NULL,
+
+    Renderings NVARCHAR(MAX) NULL,
+
+    EndpointUrl NVARCHAR(2000) NULL,
+    JobResult BIT NULL,
+
     RawJson NVARCHAR(MAX) NOT NULL
 );
 
-CREATE INDEX IX_{tableName}_Time
-    ON dbo.[{tableName}] (LogTimeUtc DESC);
+CREATE INDEX IX_{{tableName}}_Time
+    ON dbo.[{{tableName}}] (LogTimeUtc DESC);
 
-CREATE INDEX IX_{tableName}_LevelTime
-    ON dbo.[{tableName}] (LogLevel, LogTimeUtc DESC);
+CREATE INDEX IX_{{tableName}}_LevelTime
+    ON dbo.[{{tableName}}] (LogLevel, LogTimeUtc DESC);
 
-CREATE INDEX IX_{tableName}_SourceContext
-    ON dbo.[{tableName}] (SourceContext, LogTimeUtc DESC);
+CREATE INDEX IX_{{tableName}}_SourceContext
+    ON dbo.[{{tableName}}] (SourceContext, LogTimeUtc DESC);
 
-CREATE INDEX IX_{tableName}_Memory
-    ON dbo.[{tableName}] (MemoryUsage DESC);
+CREATE INDEX IX_{{tableName}}_Memory
+    ON dbo.[{{tableName}}] (MemoryUsage DESC);
 
-CREATE INDEX IX_{tableName}_User
-    ON dbo.[{tableName}] (UserName, LogTimeUtc DESC);
+CREATE INDEX IX_{{tableName}}_User
+    ON dbo.[{{tableName}}] (UserName, LogTimeUtc DESC);
+
+CREATE INDEX IX_{{tableName}}_SqlResult
+    ON dbo.[{{tableName}}] (SqlResult, LogTimeUtc DESC);
+
+CREATE INDEX IX_{{tableName}}_Application
+    ON dbo.[{{tableName}}] (ApplicationName, LogTimeUtc DESC);
+
+CREATE INDEX IX_{{tableName}}_Process
+    ON dbo.[{{tableName}}] (ProcessId, LogTimeUtc DESC);
 
 END
 """;
 
-            await using var con =
-                new SqlConnection(_connectionString);
-
+            await using var con = new SqlConnection(_connectionString);
             await con.OpenAsync();
-
-            await new SqlCommand(sql, con)
-                .ExecuteNonQueryAsync();
+            await new SqlCommand(sql, con).ExecuteNonQueryAsync();
         }
 
         public async Task BulkInsertAsync(string tableName, List<SerilogEvent> events)
@@ -99,6 +118,7 @@ END
             dt.Columns.Add("LogLevel");
             dt.Columns.Add("MessageTemplate");
             dt.Columns.Add("ExceptionText");
+            dt.Columns.Add("ExceptionType");
             dt.Columns.Add("ApplicationName");
             dt.Columns.Add("SourceContext");
             dt.Columns.Add("Context");
@@ -113,6 +133,15 @@ END
             dt.Columns.Add("EnvironmentUserName");
             dt.Columns.Add("ClientGuid", typeof(Guid));
             dt.Columns.Add("SqlErrorNumber", typeof(int));
+            dt.Columns.Add("ShortSql", typeof(string));
+            dt.Columns.Add("SqlText", typeof(string));
+            dt.Columns.Add("SqlResult", typeof(int));
+            dt.Columns.Add("SqlParameters", typeof(string));
+            dt.Columns.Add("ConnectionString", typeof(string));
+            dt.Columns.Add("Renderings", typeof(string));
+            dt.Columns.Add("EndpointUrl", typeof(string));
+            dt.Columns.Add("JobResult", typeof(bool));
+
             dt.Columns.Add("RawJson");
 
             foreach (var e in events)
@@ -122,6 +151,7 @@ END
                     e.LogLevel,
                     e.MessageTemplate,
                     e.ExceptionText,
+                    e.ExceptionType,
                     e.ApplicationName,
                     e.SourceContext,
                     e.Context,
@@ -136,6 +166,14 @@ END
                     e.EnvironmentUserName,
                     e.ClientGuid,
                     e.SqlErrorNumber,
+                    e.ShortSql,
+                    e.SqlText,
+                    e.SqlResult,
+                    e.SqlParameters,
+                    e.ConnectionString,
+                    e.Renderings,
+                    e.EndpointUrl,
+                    e.JobResult,
                     e.RawJson);
             }
 
@@ -166,6 +204,16 @@ END
             bulk.ColumnMappings.Add("EnvironmentUserName", "EnvironmentUserName");
             bulk.ColumnMappings.Add("ClientGuid", "ClientGuid");
             bulk.ColumnMappings.Add("SqlErrorNumber", "SqlErrorNumber");
+
+            bulk.ColumnMappings.Add("ExceptionType", "ExceptionType");
+            bulk.ColumnMappings.Add("ShortSql", "ShortSql");
+            bulk.ColumnMappings.Add("SqlText", "SqlText");
+            bulk.ColumnMappings.Add("SqlResult", "SqlResult");
+            bulk.ColumnMappings.Add("SqlParameters", "SqlParameters");
+            bulk.ColumnMappings.Add("ConnectionString", "ConnectionString");
+            bulk.ColumnMappings.Add("Renderings", "Renderings");
+            bulk.ColumnMappings.Add("EndpointUrl", "EndpointUrl");
+            bulk.ColumnMappings.Add("JobResult", "JobResult");
             bulk.ColumnMappings.Add("RawJson", "RawJson");
 
             await bulk.WriteToServerAsync(dt);

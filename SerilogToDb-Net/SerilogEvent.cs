@@ -33,6 +33,19 @@ namespace SerilogToDb_Net
 
         public int? SqlErrorNumber { get; set; }
 
+        public string? ExceptionType { get; set; }
+
+        public string? ShortSql { get; set; }
+        public string? SqlText { get; set; }
+        public int? SqlResult { get; set; }
+        public string? SqlParameters { get; set; }
+        public string? ConnectionString { get; set; }
+
+        public string? Renderings { get; set; }
+
+        public string? EndpointUrl { get; set; }
+
+        public bool? JobResult { get; set; }
         public string RawJson { get; set; } = "";
     }
 }
