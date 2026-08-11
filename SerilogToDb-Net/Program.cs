@@ -1,9 +1,9 @@
 ﻿using Microsoft.Extensions.Configuration;
 using SerilogToDb_Net;
 
-if (args.Length == 0)
+if (args.Length == 0 || args.Length > 2)
 {
-    Console.WriteLine("Usage: SerilogToDb-Net <logfile>");
+    Console.WriteLine("Usage: SerilogToDb-Net <logfile> [tableName]");
     return;
 }
 
@@ -23,12 +23,20 @@ var configuration =
 var connectionString =
     configuration.GetConnectionString("LogsDb");
 
-var tableName =
-    $"Serilog_{Path.GetFileNameWithoutExtension(filePath)}";
+var tableName = args.Length == 2
+    ? args[1]
+    : $"Serilog_{Path.GetFileNameWithoutExtension(filePath)}";
 
-tableName = tableName
-    .Replace(" ", "_")
-    .Replace("-", "_");
+tableName = new string(
+    tableName
+        .Select(character => char.IsLetterOrDigit(character) || character == '_' ? character : '_')
+        .ToArray());
+
+if (string.IsNullOrWhiteSpace(tableName) || tableName.All(character => character == '_'))
+{
+    Console.WriteLine("Table name must contain at least one letter or digit.");
+    return;
+}
 
 Console.WriteLine($"Table: {tableName}");
 

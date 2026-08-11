@@ -6,7 +6,7 @@
 
 The application is intended for troubleshooting, log analysis, and ad-hoc investigation of large Serilog log files. It parses each JSON log event, extracts commonly used fields into database columns, and stores the complete original JSON payload for future analysis.
 
-For each imported log file, a dedicated SQL table is automatically created using the naming convention:
+For each imported log file, a dedicated SQL table is automatically created using the naming convention, unless a table name is provided as the second command-line argument:
 
 
 ![Example of Serilog.txt](Example-of-Sirilog.txt.jpg)
@@ -19,6 +19,8 @@ For each imported log file, a dedicated SQL table is automatically created using
 ```text
 Serilog_<FileNameWithoutExtension>
 ```
+
+Multiple log files can be imported into the same table by providing the same table name for each import.
 
 Examples:
 
@@ -83,6 +85,13 @@ Columns include:
 SerilogToDb-Net.exe Small.txt
 ```
 
+To import into a specific table:
+
+```text
+SerilogToDb-Net.exe Small.txt Serilog_AllDays
+SerilogToDb-Net.exe C:\Logs\ProductionLog.txt Serilog_AllDays
+```
+
 or
 
 ```text
@@ -99,6 +108,12 @@ SerilogToDb-Net.exe C:\Logs\Small.txt
 
 ```text
 Small.txt
+```
+
+To use a specific table when debugging, enter both arguments:
+
+```text
+Small.txt Serilog_AllDays
 ```
 
 #### Visual Studio Debug Launch Profile

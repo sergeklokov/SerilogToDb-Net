@@ -2,7 +2,7 @@
   "profiles": {
     "SerilogToDb-Net": {
       "commandName": "Project",
-      "commandLineArgs": "deviceLog.txt"
+      "commandLineArgs": "Small.txt  Serilog_Small"
     }
   }
 }
